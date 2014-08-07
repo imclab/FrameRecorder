@@ -1,0 +1,1 @@
+An example on how to use the recorder using LeapMotion
