@@ -19,13 +19,15 @@ public class HandController : MonoBehaviour {
   public HandModel leftPhysicsModel;
   public HandModel rightGraphicsModel;
   public HandModel rightPhysicsModel;
-
   public ToolModel toolModel;
-
   public Vector3 handMovementScale = Vector3.one;
-
-  public bool enableInteraction;
-
+  public bool toggleRecorder = false;
+  public string recorderFilePath;
+  public TextAsset playerFilePath;
+  public KeyCode keyToRecord = KeyCode.None;
+  public KeyCode keyToSave = KeyCode.None;
+  public KeyCode keyToReset = KeyCode.None;
+  
   private Controller leap_controller_;
 
   private Dictionary<int, HandModel> hand_graphics_;
@@ -33,7 +35,7 @@ public class HandController : MonoBehaviour {
   private Dictionary<int, ToolModel> tools_;
   
   private LeapRecorder leap_recorder_;
-  
+
   private int record_state_ = 0;
   private int record_index_ = 0;
   private string path;
@@ -183,37 +185,42 @@ public class HandController : MonoBehaviour {
   void Update() {
     if (leap_controller_ == null)
       return;
-
-    Frame frame = leap_controller_.Frame();
     
-    if (leap_recorder_ != null) {
-      if (Input.GetKeyDown(KeyCode.R)) {
+    Frame frame = new Frame();
+    
+    if (!toggleRecorder) {
+      frame = leap_controller_.Frame();
+      if (Input.GetKeyDown(keyToRecord)) {
         Debug.Log("Record");
         record_state_ = 1;
-      } else if (Input.GetKeyDown(KeyCode.S)) {
+      } else if (Input.GetKeyDown(keyToSave)) {
         Debug.Log("Save");
-        path = Application.dataPath + "/" + System.DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".bytes";
+        if (recorderFilePath == "") {
+          path = Application.dataPath + "/" + System.DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".bytes";
+        } else {
+          path = Application.dataPath + "/" + recorderFilePath + ".bytes";
+        }
         record_state_ = 2;
         record_index_ = 0;
         leap_recorder_.Save(path);
-      } else if (Input.GetKeyDown(KeyCode.Space)) {
+      } else if (Input.GetKeyDown(keyToReset)) {
         leap_recorder_.Reset();
         record_state_ = 0;
-      } else if (Input.GetKeyDown(KeyCode.L)) {
-        Debug.Log("Load");
-        leap_recorder_.Load(path);
-        record_state_ = 2;
-        record_index_ = 0;
       }
-      
-      if (record_state_ == 1) {
-        leap_recorder_.Record(frame);
-      } else if (record_state_ == 2) {
-        frame = leap_recorder_.GetFrame(record_index_);
-        record_index_++;
-        if (record_index_ == leap_recorder_.GetFramesCount()) {
-          record_index_ = 0;
-        }
+    } else {
+      if (playerFilePath) {
+        leap_recorder_.Load(playerFilePath.bytes);
+        record_state_ = 2;
+      }
+    }
+    
+    if (record_state_ == 1) {
+      leap_recorder_.Record(frame);
+    } else if (record_state_ == 2) {
+      frame = leap_recorder_.GetFrame(record_index_);
+      record_index_++;
+      if (record_index_ == leap_recorder_.GetFramesCount()) {
+        record_index_ = 0;
       }
     }
     

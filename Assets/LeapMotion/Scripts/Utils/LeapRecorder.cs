@@ -54,17 +54,30 @@ public class LeapRecorder {
   public void Load(string path) {
     frames_.Clear();
     FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-    int stream_size = (int)stream.Length;
     int stream_increment = 0;
     for (int stream_index = 0; stream_index < stream.Length; stream_index += stream_increment) {
       byte[] frame_size = new byte[4];
       stream.Read(frame_size, 0, frame_size.Length);
-      uint frame_size_uint = System.BitConverter.ToUInt32(frame_size, 0);
-      byte[] frame = new byte[frame_size_uint];
+      byte[] frame = new byte[System.BitConverter.ToUInt32(frame_size, 0)];
       stream.Read(frame, 0, frame.Length);
       frames_.Add(frame);
       stream_index += frame_size.Length;
       stream_index += frame.Length;
+    }
+    stream.Close();
+  }
+  
+  public void Load(byte[] data) {
+    frames_.Clear();
+    int i = 0;
+    while (i < data.Length) {
+      byte[] frame_size = new byte[4];
+      Array.Copy(data, i, frame_size, 0, frame_size.Length);
+      i += frame_size.Length;
+      byte[] frame = new byte[System.BitConverter.ToUInt32(frame_size, 0)];
+      Array.Copy(data, i, frame, 0, frame.Length);
+      i += frame.Length;
+      frames_.Add(frame);
     }
   }
 }

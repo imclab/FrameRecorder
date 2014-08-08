@@ -2,12 +2,21 @@
 using UnityEngine;
 using System.Collections;
 
+enum RECORD_OPTIONS {
+  IDLE = 0,
+  RECORD = 1,
+  PLAYBACK = 2
+}
+
 [CustomEditor(typeof(HandController))]
 public class HandControllerEditor : Editor {
 
   private const float BOX_HEIGHT = 0.45f;
   private const float BOX_WIDTH = 0.965f;
   private const float BOX_DEPTH = 0.6671f;
+  
+  private string recorder_or_player_name_ = "Toggle Recorder/Player";
+  private bool recorder_or_player_ = true;
 
   public void OnSceneGUI() {
     HandController controller = (HandController)target;
@@ -75,7 +84,29 @@ public class HandControllerEditor : Editor {
 
     controller.handMovementScale =
         EditorGUILayout.Vector3Field("Hand Movement Scale", controller.handMovementScale);
+                          
 
+    GUIStyle buttonStyle = new GUIStyle("Button");
+    buttonStyle.alignment = TextAnchor.MiddleLeft;
+    if (GUILayout.Button(recorder_or_player_name_, buttonStyle)) {
+      if (recorder_or_player_) {
+        recorder_or_player_ = !recorder_or_player_;
+        recorder_or_player_name_ = "Toggle Recorder/Player [Player]";
+      } else {
+        recorder_or_player_ = !recorder_or_player_;
+        recorder_or_player_name_ = "Toggle Recorder/Player [Recorder]";
+      }
+    }
+    
+    if (recorder_or_player_) {
+      controller.recorderFilePath = EditorGUILayout.TextField("Recorder File Path", controller.recorderFilePath);
+      controller.keyToRecord = (KeyCode)EditorGUILayout.EnumPopup("Key To Record", controller.keyToRecord);
+      controller.keyToSave = (KeyCode)EditorGUILayout.EnumPopup("Key To Save", controller.keyToSave);
+      controller.keyToReset = (KeyCode)EditorGUILayout.EnumPopup("Key To Reset", controller.keyToReset);
+    } else {
+      controller.playerFilePath = (TextAsset)EditorGUILayout.ObjectField("Player File Path", controller.playerFilePath, typeof(TextAsset), true);
+    }
+    
     if (GUI.changed)
       EditorUtility.SetDirty(controller);
 
