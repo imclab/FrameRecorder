@@ -15,8 +15,7 @@ public class HandControllerEditor : Editor {
   private const float BOX_WIDTH = 0.965f;
   private const float BOX_DEPTH = 0.6671f;
   
-  private string recorder_or_player_name_ = "Toggle Recorder/Player";
-  private bool recorder_or_player_ = true;
+  private string recorder_or_player_ = "Toggle Recorder/Player";
 
   public void OnSceneGUI() {
     HandController controller = (HandController)target;
@@ -86,25 +85,38 @@ public class HandControllerEditor : Editor {
         EditorGUILayout.Vector3Field("Hand Movement Scale", controller.handMovementScale);
                           
 
+    if (controller.toggleRecorder) {
+      recorder_or_player_ = "Toggle Recorder/Player [Recorder]";
+    } else {
+      recorder_or_player_ = "Toggle Recorder/Player [Player]";
+    }
+    
     GUIStyle buttonStyle = new GUIStyle("Button");
     buttonStyle.alignment = TextAnchor.MiddleLeft;
-    if (GUILayout.Button(recorder_or_player_name_, buttonStyle)) {
-      if (recorder_or_player_) {
-        recorder_or_player_ = !recorder_or_player_;
-        recorder_or_player_name_ = "Toggle Recorder/Player [Player]";
+    if (GUILayout.Button(recorder_or_player_, buttonStyle)) {
+      if (controller.toggleRecorder) {
+        controller.toggleRecorder = !controller.toggleRecorder;    
       } else {
-        recorder_or_player_ = !recorder_or_player_;
-        recorder_or_player_name_ = "Toggle Recorder/Player [Recorder]";
+        controller.toggleRecorder = !controller.toggleRecorder;
       }
     }
     
-    if (recorder_or_player_) {
-      controller.recorderFilePath = EditorGUILayout.TextField("Recorder File Path", controller.recorderFilePath);
+    if (controller.toggleRecorder) {
+      EditorGUILayout.BeginHorizontal();
+      GUILayout.Label("Recorder File Path");
+      if (GUILayout.Button(controller.recorderFilePath, buttonStyle)) {
+        controller.recorderFilePath = EditorUtility.SaveFilePanel("Recorder File Path", "", "", "bytes");
+      }
+      EditorGUILayout.EndHorizontal();
       controller.keyToRecord = (KeyCode)EditorGUILayout.EnumPopup("Key To Record", controller.keyToRecord);
       controller.keyToSave = (KeyCode)EditorGUILayout.EnumPopup("Key To Save", controller.keyToSave);
       controller.keyToReset = (KeyCode)EditorGUILayout.EnumPopup("Key To Reset", controller.keyToReset);
     } else {
       controller.playerFilePath = (TextAsset)EditorGUILayout.ObjectField("Player File Path", controller.playerFilePath, typeof(TextAsset), true);
+      controller.playerLoop = EditorGUILayout.Toggle("Loop", controller.playerLoop);
+      controller.playerStartTime = EditorGUILayout.IntField("Start Time", controller.playerStartTime);
+      controller.playerSpeed = EditorGUILayout.FloatField("Speed", controller.playerSpeed);
+      controller.playerAlpha = EditorGUILayout.FloatField("Alpha", controller.playerAlpha);
     }
     
     if (GUI.changed)

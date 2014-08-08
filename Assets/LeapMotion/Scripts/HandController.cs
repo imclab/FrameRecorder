@@ -23,10 +23,14 @@ public class HandController : MonoBehaviour {
   public Vector3 handMovementScale = Vector3.one;
   public bool toggleRecorder = false;
   public string recorderFilePath;
-  public TextAsset playerFilePath;
   public KeyCode keyToRecord = KeyCode.None;
   public KeyCode keyToSave = KeyCode.None;
   public KeyCode keyToReset = KeyCode.None;
+  public TextAsset playerFilePath;
+  public bool playerLoop = false;
+  public int playerStartTime = 0;
+  public float playerSpeed = 1.0f;
+  public float playerAlpha = 1.0f;
   
   private Controller leap_controller_;
 
@@ -37,8 +41,7 @@ public class HandController : MonoBehaviour {
   private LeapRecorder leap_recorder_;
 
   private int record_state_ = 0;
-  private int record_index_ = 0;
-  private string path;
+  private float record_index_ = 0.0f;
 
   void Start() {
     leap_controller_ = new Controller();
@@ -188,21 +191,18 @@ public class HandController : MonoBehaviour {
     
     Frame frame = new Frame();
     
-    if (!toggleRecorder) {
+    if (toggleRecorder) {
+      playerLoop = true;
+      playerStartTime = 0;
       frame = leap_controller_.Frame();
       if (Input.GetKeyDown(keyToRecord)) {
         Debug.Log("Record");
         record_state_ = 1;
       } else if (Input.GetKeyDown(keyToSave)) {
         Debug.Log("Save");
-        if (recorderFilePath == "") {
-          path = Application.dataPath + "/" + System.DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".bytes";
-        } else {
-          path = Application.dataPath + "/" + recorderFilePath + ".bytes";
-        }
         record_state_ = 2;
         record_index_ = 0;
-        leap_recorder_.Save(path);
+        leap_recorder_.Save(recorderFilePath);
       } else if (Input.GetKeyDown(keyToReset)) {
         leap_recorder_.Reset();
         record_state_ = 0;
@@ -217,10 +217,15 @@ public class HandController : MonoBehaviour {
     if (record_state_ == 1) {
       leap_recorder_.Record(frame);
     } else if (record_state_ == 2) {
-      frame = leap_recorder_.GetFrame(record_index_);
-      record_index_++;
-      if (record_index_ == leap_recorder_.GetFramesCount()) {
-        record_index_ = 0;
+      if (Time.frameCount >= playerStartTime) {
+        frame = leap_recorder_.GetFrame(Mathf.Min((int)record_index_,leap_recorder_.GetFramesCount() - 1));
+        if (record_index_ < leap_recorder_.GetFramesCount() - 1) {
+          record_index_ += playerSpeed;
+        } else {
+          if (playerLoop) {
+            record_index_ = 0;
+          }
+        }
       }
     }
     
