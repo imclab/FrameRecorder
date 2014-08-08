@@ -32,13 +32,17 @@ public class HandController : MonoBehaviour {
   private Dictionary<int, HandModel> hand_physics_;
   private Dictionary<int, ToolModel> tools_;
   
-  private bool playback_ = false;
-  private int playback_index_ = 0;
+  private LeapRecorder leap_recorder_;
+  
+  private int record_state_ = 0;
+  private int record_index_ = 0;
+  private string path;
 
   void Start() {
     leap_controller_ = new Controller();
     hand_graphics_ = new Dictionary<int, HandModel>();
     hand_physics_ = new Dictionary<int, HandModel>();
+    leap_recorder_ = new LeapRecorder();
 
     tools_ = new Dictionary<int, ToolModel>();
 
@@ -182,27 +186,34 @@ public class HandController : MonoBehaviour {
 
     Frame frame = leap_controller_.Frame();
     
-    LeapRecorder leap_recorder = (LeapRecorder)this.GetComponent(typeof(LeapRecorder));
-    if (Input.GetKey(KeyCode.R)) {
-      Debug.Log("Record");
-      leap_recorder.Record();
-      playback_index_ = 0;
-    } else if (Input.GetKey(KeyCode.E)) {
-      Debug.Log("End");
-      leap_recorder.EndRecord();
-      playback_ = true;
-    } else if (Input.GetKey(KeyCode.R)) {
-    
-    } else if (Input.GetKey(KeyCode.Space)) {
-      leap_recorder.EndRecord();
-      playback_ = false;
-    }
-    
-    if (playback_) {
-      frame = leap_recorder.GetFrame(playback_index_);
-      playback_index_++;
-      if (playback_index_ == leap_recorder.GetNumFrames()) {
-        playback_index_ = 0;
+    if (leap_recorder_ != null) {
+      if (Input.GetKeyDown(KeyCode.R)) {
+        Debug.Log("Record");
+        record_state_ = 1;
+      } else if (Input.GetKeyDown(KeyCode.S)) {
+        Debug.Log("Save");
+        path = Application.dataPath + "/" + System.DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".bytes";
+        record_state_ = 2;
+        record_index_ = 0;
+        leap_recorder_.Save(path);
+      } else if (Input.GetKeyDown(KeyCode.Space)) {
+        leap_recorder_.Reset();
+        record_state_ = 0;
+      } else if (Input.GetKeyDown(KeyCode.L)) {
+        Debug.Log("Load");
+        leap_recorder_.Load(path);
+        record_state_ = 2;
+        record_index_ = 0;
+      }
+      
+      if (record_state_ == 1) {
+        leap_recorder_.Record(frame);
+      } else if (record_state_ == 2) {
+        frame = leap_recorder_.GetFrame(record_index_);
+        record_index_++;
+        if (record_index_ == leap_recorder_.GetFramesCount()) {
+          record_index_ = 0;
+        }
       }
     }
     
