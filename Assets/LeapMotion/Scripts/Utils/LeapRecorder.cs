@@ -4,6 +4,12 @@ using System.IO;
 using System.Collections.Generic;
 using Leap;
 
+public enum RecorderMode {
+  Off = 0,
+  Record = 1,
+  Playback = 2
+}
+
 public class LeapRecorder {
 
   private List<byte[]> frames_;
@@ -40,7 +46,7 @@ public class LeapRecorder {
     return frames_.Count;
   }
   
-  public void Save(string path) {
+  public bool Save(string path) {
     FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write);
     for (int i = 0; i < frames_.Count; ++i) {
       byte[] frame_size = new byte[4];
@@ -49,9 +55,17 @@ public class LeapRecorder {
       stream.Write(frames_[i], 0, frames_[i].Length);
     }
     stream.Close();
+    if (File.Exists(path)) {
+      return true;
+    } else {
+      return false;
+    }
   }
   
-  public void Load(string path) {
+  public bool Load(string path) {
+    if (!File.Exists(path)) {
+      return false;
+    }
     frames_.Clear();
     FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read);
     int stream_increment = 0;
@@ -65,6 +79,11 @@ public class LeapRecorder {
       stream_index += frame.Length;
     }
     stream.Close();
+    if (File.Exists(path)) {
+      return true;
+    } else {
+      return false;
+    }
   }
   
   public void Load(byte[] data) {
